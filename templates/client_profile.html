@@ -93,6 +93,8 @@
               {{ fmt_currency(client.premium_amount) if client.premium_amount else '–' }}
             </div>
           </div>
+          <div class="info-item"><div class="lbl">Policy Start Date</div><div class="val">{{ fmt_date(client.policy_start_date) }}</div></div>
+          <div class="info-item"><div class="lbl">Payment Term</div><div class="val">{{ client.payment_term or '–' }}</div></div>
           <div class="info-item"><div class="lbl">Renewal Date</div>
             <div class="val">{{ fmt_date(client.renewal_date) }}
               {% if client.renewal_date %}
@@ -103,6 +105,7 @@
               {% endif %}
             </div>
           </div>
+          <div class="info-item"><div class="lbl">Maturity Date</div><div class="val">{{ fmt_date(client.maturity_date) }}</div></div>
         </div>
         {% if client.notes %}
         <div style="margin-top:14px;padding:12px;background:var(--surface2);border-radius:8px;font-size:.875rem">

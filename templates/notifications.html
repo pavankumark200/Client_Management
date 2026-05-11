@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+{% block title %}Notification Logs — InsuranceCMS{% endblock %}
+{% block page_title %}Email Notification Logs{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:20px">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Client Name</th>
+          <th>Email / Contact</th>
+          <th>Policy No.</th>
+          <th>Status</th>
+          <th>Time Sent</th>
+          <th>Error Message</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% if logs %}
+        {% for log in logs %}
+        <tr>
+          <td><a href="/clients/{{ log.client_id }}" style="color:var(--primary);font-weight:600;text-decoration:none">{{ log.client_name }}</a></td>
+          <td>{{ log.phone }}</td>
+          <td>{{ log.policy_number or '–' }}</td>
+          <td>
+            {% if log.status == 'sent' %}
+              <span class="badge badge-success">Sent</span>
+            {% else %}
+              <span class="badge badge-danger">Failed</span>
+            {% endif %}
+          </td>
+          <td>{{ log.sent_at }}</td>
+          <td style="color:var(--text-secondary);font-size:0.85em;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ log.error_message or '' }}">
+            {{ log.error_message or '–' }}
+          </td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <tr>
+          <td colspan="6" class="table-empty" style="padding:28px">No notifications have been sent yet.</td>
+        </tr>
+      {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -17,6 +17,18 @@ from flask import (
 )
 from werkzeug.security import generate_password_hash, check_password_hash
 
+# ── Load Environment Variables ────────────────────────────────
+from dotenv import load_dotenv
+load_dotenv()
+
+# ── Scheduler & Email ───────────────────────────────────────────
+import time
+from threading import Thread
+from apscheduler.schedulers.background import BackgroundScheduler
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
 # ── Local imports ─────────────────────────────────────────────
 import sys
 sys.path.insert(0, str(Path(__file__).parent))
@@ -224,10 +236,11 @@ def api_add_client():
             INSERT INTO clients
               (full_name, phone, email, address, date_of_birth,
                aadhaar_number, pan_number, policy_type, policy_number,
-               insurance_company, premium_amount, renewal_date,
+               insurance_company, premium_amount, policy_start_date, payment_term,
+               renewal_date, maturity_date,
                vehicle_number, vehicle_model, nominee_name,
                nominee_relation, nominee_dob, notes, status)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, (
             safe_str(f.get("full_name")),
             safe_str(f.get("phone")),
@@ -240,7 +253,10 @@ def api_add_client():
             safe_str(f.get("policy_number")),
             safe_str(f.get("insurance_company")),
             safe_float(f.get("premium_amount")),
+            safe_date(f.get("policy_start_date")),
+            safe_str(f.get("payment_term")),
             safe_date(f.get("renewal_date")),
+            safe_date(f.get("maturity_date")),
             safe_str(f.get("vehicle_number")),
             safe_str(f.get("vehicle_model")),
             safe_str(f.get("nominee_name")),
@@ -279,7 +295,8 @@ def api_update_client(client_id):
             UPDATE clients SET
               full_name=?, phone=?, email=?, address=?, date_of_birth=?,
               aadhaar_number=?, pan_number=?, policy_type=?, policy_number=?,
-              insurance_company=?, premium_amount=?, renewal_date=?,
+              insurance_company=?, premium_amount=?, policy_start_date=?, payment_term=?,
+              renewal_date=?, maturity_date=?,
               vehicle_number=?, vehicle_model=?, nominee_name=?,
               nominee_relation=?, nominee_dob=?, notes=?, status=?,
               updated_at=datetime('now')
@@ -296,7 +313,10 @@ def api_update_client(client_id):
             safe_str(f.get("policy_number")),
             safe_str(f.get("insurance_company")),
             safe_float(f.get("premium_amount")),
+            safe_date(f.get("policy_start_date")),
+            safe_str(f.get("payment_term")),
             safe_date(f.get("renewal_date")),
+            safe_date(f.get("maturity_date")),
             safe_str(f.get("vehicle_number")),
             safe_str(f.get("vehicle_model")),
             safe_str(f.get("nominee_name")),
@@ -444,6 +464,109 @@ def renewals():
         admin_name=session.get("admin_name", "Admin"),
     )
 
+
+# ═════════════════════════════════════════════════════════════
+#  EMAIL AUTOMATION
+# ═════════════════════════════════════════════════════════════
+
+def run_email_alerts():
+    """Background task to find clients due in exactly 3 days and send them an Email."""
+    def _send():
+        from config.database import get_db
+        from datetime import date, timedelta
+
+        db = get_db()
+        today = date.today()
+        target_date = today + timedelta(days=3)
+        target_str = target_date.isoformat()
+
+        # SMTP credentials
+        sender_email = os.environ.get('SMTP_EMAIL')
+        sender_password = os.environ.get('SMTP_PASSWORD')
+
+        if not sender_email or not sender_password:
+            print("SMTP credentials missing in environment variables (.env). Aborting email alerts.")
+            db.close()
+            return
+
+        rows = db.execute(
+            "SELECT id, full_name, email, policy_number, renewal_date FROM clients WHERE status='active' AND renewal_date = ?", 
+            (target_str,)
+        ).fetchall()
+
+        if not rows:
+            db.close()
+            return
+
+        try:
+            # Connect to Gmail SMTP server
+            server = smtplib.SMTP('smtp.gmail.com', 587)
+            server.starttls()
+            server.login(sender_email, sender_password)
+        except Exception as e:
+            print(f"Failed to connect to email server: {e}")
+            db.close()
+            return
+
+        for r in rows:
+            email_to = r["email"]
+            if not email_to:
+                continue
+
+            subject = "Insurance Policy Renewal Reminder"
+            body = f"Hello {r['full_name']},\n\nThis is an automated reminder that your insurance policy ({r['policy_number'] or 'N/A'}) is due for renewal on {r['renewal_date']}.\n\nPlease ignore this email if you have already paid.\n\nThank you."
+
+            msg = MIMEMultipart()
+            msg['From'] = sender_email
+            msg['To'] = email_to
+            msg['Subject'] = subject
+            msg.attach(MIMEText(body, 'plain'))
+
+            try:
+                print(f"Sending Email to {email_to}...")
+                server.sendmail(sender_email, email_to, msg.as_string())
+                print(f"Email sent successfully to {email_to}")
+
+                db.execute(
+                    "INSERT INTO notifications_log (client_id, client_name, phone, policy_number, status, error_message) VALUES (?, ?, ?, ?, ?, ?)",
+                    (r["id"], r["full_name"], email_to, r["policy_number"], "sent", None)
+                )
+                db.commit()
+            except Exception as e:
+                print(f"Failed to send Email to {email_to}: {e}")
+                db.execute(
+                    "INSERT INTO notifications_log (client_id, client_name, phone, policy_number, status, error_message) VALUES (?, ?, ?, ?, ?, ?)",
+                    (r["id"], r["full_name"], email_to, r["policy_number"], "failed", str(e))
+                )
+                db.commit()
+
+        server.quit()
+        db.close()
+        print("Finished Email alert batch.")
+
+    t = Thread(target=_send)
+    t.start()
+
+@app.route("/api/trigger_email_alerts", methods=["POST"])
+@login_required
+def trigger_email_alerts():
+    """Manually trigger the 3-day Email alert scan."""
+    run_email_alerts()
+    return success_json("Email alerts triggered. Messages will be sent in the background.")
+
+
+
+@app.route("/notifications")
+@login_required
+def notifications():
+    db = get_db()
+    rows = db.execute("SELECT * FROM notifications_log ORDER BY sent_at DESC LIMIT 100").fetchall()
+    db.close()
+    return render_template(
+        "notifications.html",
+        logs=[dict(r) for r in rows],
+        admin_name=session.get("admin_name", "Admin")
+    )
 
 # ═════════════════════════════════════════════════════════════
 #  DOCUMENT MANAGEMENT
@@ -693,6 +816,12 @@ def too_large(e):
 
 if __name__ == "__main__":
     init_db()   # create tables + seed demo data on first run
+    
+    # Start the background scheduler
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(func=run_email_alerts, trigger="cron", hour=10, minute=0)
+    scheduler.start()
+
     print("=" * 55)
     print("  Insurance CMS  –  http://127.0.0.1:5000")
     print("  Login:  admin  /  Admin@1234")

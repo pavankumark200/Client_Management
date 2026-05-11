@@ -41,6 +41,10 @@
          class="nav-link {% if request.endpoint == 'renewals' %}active{% endif %}">
         <span class="icon">🔔</span> Renewals &amp; Alerts
       </a>
+      <a href="{{ url_for('notifications') }}"
+         class="nav-link {% if request.endpoint == 'notifications' %}active{% endif %}">
+        <span class="icon">💬</span> Notification Logs
+      </a>
 
       <div class="nav-section">Export</div>
       <a href="{{ url_for('export_csv') }}" class="nav-link">

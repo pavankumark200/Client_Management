@@ -341,10 +341,45 @@ function topbarSearch(e) {
   }
 }
 
+/* ── Renewal Date Auto-Calculation ───────────────────────────── */
+function calculateRenewalDate() {
+  const startDateInput = document.getElementById('policyStartDate');
+  const termInput = document.getElementById('paymentTerm');
+  const renewalInput = document.getElementById('renewalDate');
+  
+  if (!startDateInput || !termInput || !renewalInput) return;
+  
+  const startVal = startDateInput.value;
+  const term = termInput.value;
+  
+  if (startVal && term) {
+    const date = new Date(startVal);
+    if (term === 'Monthly') {
+      date.setMonth(date.getMonth() + 1);
+    } else if (term === 'Quarterly') {
+      date.setMonth(date.getMonth() + 3);
+    } else if (term === 'Half-Yearly') {
+      date.setMonth(date.getMonth() + 6);
+    } else if (term === 'Yearly') {
+      date.setFullYear(date.getFullYear() + 1);
+    }
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    renewalInput.value = `${yyyy}-${mm}-${dd}`;
+  }
+}
+
 /* ── Init on DOM ready ───────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
   // Client form submit
   document.getElementById('clientForm')?.addEventListener('submit', saveClient);
+
+  // Auto-calculate renewal date bindings
+  const startDateInput = document.getElementById('policyStartDate');
+  const termInput = document.getElementById('paymentTerm');
+  if (startDateInput) startDateInput.addEventListener('change', calculateRenewalDate);
+  if (termInput) termInput.addEventListener('change', calculateRenewalDate);
 
   // Search page
   initSearch('searchInput', 'searchResultsBody');

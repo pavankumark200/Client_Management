@@ -11,6 +11,10 @@
 </div>
 {% if rows %}
 <div class="card" style="margin-bottom:20px">
+  <div class="flex" style="justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div style="color:var(--text-secondary)">Manage policy renewals and send reminders</div>
+    <button class="btn btn-outline" onclick="testEmailAutomator()">📧 Run Email Automator</button>
+  </div>
   <div class="table-wrap">
     <table>
       <thead>
@@ -53,4 +57,33 @@
 {{ renewal_table(due_60,  '🟡 Due within 31–60 Days', '#fdd835') }}
 {{ renewal_table(due_90,  '🟢 Due within 61–90 Days', '#2e7d32') }}
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+function testEmailAutomator() {
+  if(confirm("This will scan for clients expiring in exactly 3 days and automatically send them an Email. Proceed?")) {
+    const btns = document.querySelectorAll('button[onclick="testEmailAutomator()"]');
+    btns.forEach(btn => {
+      btn.disabled = true;
+      btn.innerHTML = 'Scanning...';
+    });
+    fetch('/api/trigger_email_alerts', {method: 'POST'})
+      .then(r => r.json())
+      .then(d => {
+        showToast(d.message || "Email automator started.");
+        btns.forEach(btn => {
+          btn.innerHTML = '📧 Run Email Automator';
+          btn.disabled = false;
+        });
+      })
+      .catch(e => {
+        showToast("Error starting Email automator.", "error");
+        btns.forEach(btn => {
+          btn.disabled = false;
+        });
+      });
+  }
+}
+</script>
 {% endblock %}
