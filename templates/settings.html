@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block title %}Settings — InsuranceCMS{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div style="max-width:500px">
+  <div class="card">
+    <div class="card-header">🔐 Change Password</div>
+    <div class="card-body">
+      {% if msg   %}<div class="alert alert-success">✅ {{ msg }}</div>{% endif %}
+      {% if error %}<div class="alert alert-danger">⚠️ {{ error }}</div>{% endif %}
+      <form method="POST" action="{{ url_for('settings') }}">
+        <div class="form-group" style="margin-bottom:14px">
+          <label>Current Password</label>
+          <input name="current_password" type="password" required placeholder="Enter current password"/>
+        </div>
+        <div class="form-group" style="margin-bottom:14px">
+          <label>New Password</label>
+          <input name="new_password" type="password" required placeholder="Min 6 characters"/>
+        </div>
+        <div class="form-group" style="margin-bottom:20px">
+          <label>Confirm New Password</label>
+          <input name="confirm_password" type="password" required placeholder="Repeat new password"/>
+        </div>
+        <button type="submit" class="btn btn-primary">💾 Update Password</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

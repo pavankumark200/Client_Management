@@ -1,0 +1,127 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard — InsuranceCMS{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<!-- ── Stat Cards ── -->
+<div class="stats-grid">
+  <div class="stat-card blue">
+    <div class="stat-icon">👥</div>
+    <div class="stat-info">
+      <div class="label">Total Clients</div>
+      <div class="value">{{ total_clients }}</div>
+    </div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-icon">✅</div>
+    <div class="stat-info">
+      <div class="label">Active Policies</div>
+      <div class="value">{{ active_policies }}</div>
+    </div>
+  </div>
+  <div class="stat-card orange">
+    <div class="stat-icon">🔔</div>
+    <div class="stat-info">
+      <div class="label">Expiring (30d)</div>
+      <div class="value">{{ expiring_soon }}</div>
+    </div>
+  </div>
+  <div class="stat-card red">
+    <div class="stat-icon">⚠️</div>
+    <div class="stat-info">
+      <div class="label">Expired</div>
+      <div class="value">{{ expired_count }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Alert Banner ── -->
+{% if alerts %}
+<div class="alert alert-warning" style="margin-bottom:20px">
+  <span>🔔</span>
+  <div>
+    <strong>{{ alerts|length }} polic{{ 'y' if alerts|length==1 else 'ies' }} expiring within 60 days!</strong>
+    <a href="{{ url_for('renewals') }}" style="margin-left:12px;color:inherit;font-weight:700">View All →</a>
+  </div>
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+  <!-- ── Recent Clients ── -->
+  <div class="card" style="grid-column:1/-1">
+    <div class="card-header">
+      <span>🕐 Recently Added Clients</span>
+      <a href="{{ url_for('clients') }}" class="btn btn-outline btn-sm">View All</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th><th>Phone</th><th>Policy Type</th>
+            <th>Renewal Date</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for c in recent_clients %}
+          <tr>
+            <td><a href="/clients/{{ c.id }}" style="color:var(--primary);font-weight:600;text-decoration:none">{{ c.full_name }}</a></td>
+            <td>{{ c.phone or '–' }}</td>
+            <td>{{ c.policy_type or '–' }}</td>
+            <td>{{ fmt_date(c.renewal_date) }}</td>
+            <td>
+              {% set rs = renewal_status(c.renewal_date) %}
+              <span class="badge {{ rs.cls }}">{{ rs.label }}</span>
+            </td>
+            <td>
+              <div class="flex gap-2">
+                <a href="/clients/{{ c.id }}" class="btn-icon" title="View">👁️</a>
+                <button class="btn-icon"
+                        data-id="{{ c.id }}"
+                        onclick="openEditClient(this.dataset.id)" title="Edit">✏️</button>
+              </div>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="6" class="table-empty">No clients yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Expiry Alerts ── -->
+  {% if alerts %}
+  <div class="card" style="grid-column:1/-1">
+    <div class="card-header">
+      <span>⚠️ Upcoming Renewals (60 days)</span>
+      <a href="{{ url_for('renewals') }}" class="btn btn-outline btn-sm">Full View</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Phone</th><th>Policy No.</th><th>Type</th><th>Renewal Date</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+        {% for a in alerts %}
+          <tr>
+            <td><a href="/clients/{{ a.id }}" style="color:var(--primary);font-weight:600;text-decoration:none">{{ a.full_name }}</a></td>
+            <td>{{ a.phone or '–' }}</td>
+            <td>{{ a.policy_number or '–' }}</td>
+            <td>{{ a.policy_type or '–' }}</td>
+            <td>{{ fmt_date(a.renewal_date) }}</td>
+            <td>
+              {% set rs = renewal_status(a.renewal_date) %}
+              <span class="badge {{ rs.cls }}">{{ rs.label }}</span>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── Client Modal (shared across pages) ── -->
+{% include "partials/client_modal.html" %}
+{% endblock %}

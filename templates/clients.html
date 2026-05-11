@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+{% block title %}Clients — InsuranceCMS{% endblock %}
+{% block page_title %}Client Management{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h2>All Clients <span style="font-size:.9rem;color:var(--text-muted);font-weight:400">({{ pag.total }} total)</span></h2>
+  <div class="flex gap-2">
+    <!-- Filter by status -->
+    <select id="statusFilter" onchange="filterStatus(this.value)"
+            style="padding:8px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:.875rem">
+      <option value="" {% if not status_f %}selected{% endif %}>All Status</option>
+      <option value="active"   {% if status_f=='active'   %}selected{% endif %}>Active</option>
+      <option value="expired"  {% if status_f=='expired'  %}selected{% endif %}>Expired</option>
+      <option value="inactive" {% if status_f=='inactive' %}selected{% endif %}>Inactive</option>
+    </select>
+    <a href="{{ url_for('export_csv') }}" class="btn btn-outline btn-sm">📥 CSV</a>
+    <a href="{{ url_for('export_pdf') }}" class="btn btn-outline btn-sm">📄 PDF</a>
+    <button class="btn btn-primary" onclick="openAddClient()">➕ Add Client</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th><a href="?sort=full_name&order={{ 'desc' if sort=='full_name' and order=='asc' else 'asc' }}&status={{ status_f }}"
+                 style="color:inherit;text-decoration:none">Name {% if sort=='full_name' %}{{ '↑' if order=='asc' else '↓' }}{% endif %}</a></th>
+          <th>Phone</th>
+          <th>Policy Type</th>
+          <th>Company</th>
+          <th><a href="?sort=premium_amount&order={{ 'desc' if sort=='premium_amount' and order=='asc' else 'asc' }}&status={{ status_f }}"
+                 style="color:inherit;text-decoration:none">Premium {% if sort=='premium_amount' %}{{ '↑' if order=='asc' else '↓' }}{% endif %}</a></th>
+          <th><a href="?sort=renewal_date&order={{ 'desc' if sort=='renewal_date' and order=='asc' else 'asc' }}&status={{ status_f }}"
+                 style="color:inherit;text-decoration:none">Renewal {% if sort=='renewal_date' %}{{ '↑' if order=='asc' else '↓' }}{% endif %}</a></th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for c in clients %}
+        <tr id="row-{{ c.id }}">
+          <td>
+            <a href="/clients/{{ c.id }}"
+               style="color:var(--primary);font-weight:600;text-decoration:none">{{ c.full_name }}</a>
+            {% if c.email %}<br><small class="text-muted">{{ c.email }}</small>{% endif %}
+          </td>
+          <td>{{ c.phone or '–' }}</td>
+          <td>{{ c.policy_type or '–' }}</td>
+          <td>{{ c.insurance_company or '–' }}</td>
+          <td>{{ fmt_currency(c.premium_amount) if c.premium_amount else '–' }}</td>
+          <td>{{ fmt_date(c.renewal_date) }}</td>
+          <td>
+            {% set rs = renewal_status(c.renewal_date) %}
+            <span class="badge {{ rs.cls }}">{{ rs.label }}</span>
+          </td>
+          <td>
+            <div class="flex gap-2">
+              <a href="/clients/{{ c.id }}" class="btn-icon" title="View Profile">👁️</a>
+              <button class="btn-icon"
+                      data-id="{{ c.id }}"
+                      onclick="openEditClient(this.dataset.id)" title="Edit">✏️</button>
+              <button class="btn-icon danger"
+                      data-id="{{ c.id }}"
+                      data-name="{{ c.full_name }}"
+                      onclick="deleteClient(this.dataset.id, this.dataset.name)" title="Delete">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="8" class="table-empty">No clients found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  {% if pag.total_pages > 1 %}
+  <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);flex-wrap:wrap;gap:10px">
+    <span class="text-muted" style="font-size:.85rem">
+      Showing {{ (pag.page-1)*pag.per_page+1 }}–{{ min(pag.page*pag.per_page, pag.total) }} of {{ pag.total }}
+    </span>
+    <div class="pagination">
+      <a href="?page={{ pag.page-1 }}&sort={{ sort }}&order={{ order }}&status={{ status_f }}"
+         class="page-link {% if pag.page==1 %}disabled{% endif %}">‹</a>
+      {% for p in range(1, pag.total_pages+1) %}
+        <a href="?page={{ p }}&sort={{ sort }}&order={{ order }}&status={{ status_f }}"
+           class="page-link {% if p==pag.page %}active{% endif %}">{{ p }}</a>
+      {% endfor %}
+      <a href="?page={{ pag.page+1 }}&sort={{ sort }}&order={{ order }}&status={{ status_f }}"
+         class="page-link {% if pag.page==pag.total_pages %}disabled{% endif %}">›</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% include "partials/client_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterStatus(val) {
+  const url = new URL(window.location);
+  url.searchParams.set('status', val);
+  url.searchParams.set('page', 1);
+  window.location = url;
+}
+</script>
+{% endblock %}

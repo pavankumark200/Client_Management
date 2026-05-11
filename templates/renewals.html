@@ -1,0 +1,56 @@
+{% extends "layout.html" %}
+{% block title %}Renewals & Alerts — InsuranceCMS{% endblock %}
+{% block page_title %}Renewals & Expiry Alerts{% endblock %}
+
+{% block content %}
+
+{% macro renewal_table(rows, label, dot_color) %}
+<div class="renewal-section-title">
+  <div class="dot" style="background:{{ dot_color }}"></div>
+  {{ label }} ({{ rows|length }})
+</div>
+{% if rows %}
+<div class="card" style="margin-bottom:20px">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Phone</th><th>Policy No.</th><th>Type</th>
+            <th>Company</th><th>Premium</th><th>Renewal Date</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+      {% for c in rows %}
+        <tr>
+          <td><a href="/clients/{{ c.id }}" style="color:var(--primary);font-weight:600;text-decoration:none">{{ c.full_name }}</a></td>
+          <td>{{ c.phone or '–' }}</td>
+          <td>{{ c.policy_number or '–' }}</td>
+          <td>{{ c.policy_type or '–' }}</td>
+          <td>{{ c.insurance_company or '–' }}</td>
+          <td>{{ fmt_currency(c.premium_amount) if c.premium_amount else '–' }}</td>
+          <td>{{ fmt_date(c.renewal_date) }}</td>
+          <td>
+            {% set rs = renewal_status(c.renewal_date) %}
+            <span class="badge {{ rs.cls }}">{{ rs.label }}</span>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="card" style="margin-bottom:20px">
+  <div class="table-empty" style="padding:28px">No clients in this category. ✅</div>
+</div>
+{% endif %}
+{% endmacro %}
+
+{% if not expired and not due_30 and not due_60 and not due_90 %}
+<div class="alert alert-success">✅ All policies are up to date. No renewals needed.</div>
+{% endif %}
+
+{{ renewal_table(expired, '🔴 Already Expired', '#c62828') }}
+{{ renewal_table(due_30,  '🟠 Due within 30 Days', '#f57c00') }}
+{{ renewal_table(due_60,  '🟡 Due within 31–60 Days', '#fdd835') }}
+{{ renewal_table(due_90,  '🟢 Due within 61–90 Days', '#2e7d32') }}
+
+{% endblock %}

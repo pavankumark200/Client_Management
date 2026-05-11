@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Insurance CMS{% endblock %}</title>
+  <meta name="description" content="Professional Insurance Client Management System"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+<div class="layout">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🛡️</div>
+      <h1>InsuranceCMS</h1>
+      <p>Client Management</p>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">Main</div>
+      <a href="{{ url_for('dashboard') }}"
+         class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
+        <span class="icon">📊</span> Dashboard
+      </a>
+      <a href="{{ url_for('clients') }}"
+         class="nav-link {% if request.endpoint in ['clients','client_profile'] %}active{% endif %}">
+        <span class="icon">👥</span> Clients
+      </a>
+      <a href="{{ url_for('search') }}"
+         class="nav-link {% if request.endpoint == 'search' %}active{% endif %}">
+        <span class="icon">🔍</span> Search
+      </a>
+
+      <div class="nav-section">Policies</div>
+      <a href="{{ url_for('renewals') }}"
+         class="nav-link {% if request.endpoint == 'renewals' %}active{% endif %}">
+        <span class="icon">🔔</span> Renewals &amp; Alerts
+      </a>
+
+      <div class="nav-section">Export</div>
+      <a href="{{ url_for('export_csv') }}" class="nav-link">
+        <span class="icon">📥</span> Export CSV
+      </a>
+      <a href="{{ url_for('export_pdf') }}" class="nav-link">
+        <span class="icon">📄</span> Export PDF
+      </a>
+
+      <div class="nav-section">Account</div>
+      <a href="{{ url_for('settings') }}"
+         class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
+        <span class="icon">⚙️</span> Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-info">
+        <div class="admin-avatar">{{ admin_name[0]|upper }}</div>
+        <div>
+          <div class="name">{{ admin_name }}</div>
+          <div class="role">Administrator</div>
+        </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="logout-btn">🚪 Logout</a>
+    </div>
+  </aside>
+
+  <!-- ── Main ── -->
+  <div class="main">
+    <header class="topbar">
+      <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+      <div class="topbar-title">{% block page_title %}Dashboard{% endblock %}</div>
+      <div class="topbar-actions">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Quick search…" onkeydown="topbarSearch(event)" aria-label="Quick search"/>
+        </div>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle theme">🌙</button>
+      </div>
+    </header>
+
+    <main class="page">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

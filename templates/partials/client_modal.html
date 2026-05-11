@@ -1,0 +1,144 @@
+<!-- Client Add/Edit Modal — included by multiple pages -->
+<div class="modal-overlay" id="clientModal">
+  <div class="modal" style="max-width:860px">
+    <div class="modal-header">
+      <h3 id="clientModalTitle">Add New Client</h3>
+      <button class="modal-close" onclick="closeModal('clientModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="clientForm" novalidate>
+
+        <div class="tabs-container">
+          <div class="tabs">
+            <div class="tab active" onclick="switchTab(this,'tab-personal')">👤 Personal</div>
+            <div class="tab" onclick="switchTab(this,'tab-policy')">📋 Policy</div>
+            <div class="tab" onclick="switchTab(this,'tab-vehicle')">🚗 Vehicle</div>
+            <div class="tab" onclick="switchTab(this,'tab-nominee')">👨‍👩‍👧 Nominee</div>
+          </div>
+
+          <!-- Personal -->
+          <div class="tab-content active" id="tab-personal">
+            <div class="form-grid">
+              <div class="form-group form-full">
+                <label>Full Name *</label>
+                <input name="full_name" type="text" required placeholder="e.g. Rajesh Kumar"/>
+              </div>
+              <div class="form-group">
+                <label>Phone Number</label>
+                <input name="phone" type="tel" placeholder="9876543210"/>
+              </div>
+              <div class="form-group">
+                <label>Email Address</label>
+                <input name="email" type="email" placeholder="email@example.com"/>
+              </div>
+              <div class="form-group">
+                <label>Date of Birth</label>
+                <input name="date_of_birth" type="date"/>
+              </div>
+              <div class="form-group">
+                <label>Aadhaar Number</label>
+                <input name="aadhaar_number" type="text" placeholder="1234 5678 9012"/>
+              </div>
+              <div class="form-group">
+                <label>PAN Number</label>
+                <input name="pan_number" type="text" placeholder="ABCDE1234F"/>
+              </div>
+              <div class="form-group form-full">
+                <label>Address</label>
+                <textarea name="address" rows="2" placeholder="Full address"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Policy -->
+          <div class="tab-content" id="tab-policy">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Policy Type</label>
+                <select name="policy_type">
+                  <option value="">-- Select --</option>
+                  <option>Motor Insurance</option>
+                  <option>Life Insurance</option>
+                  <option>Health Insurance</option>
+                  <option>Home Insurance</option>
+                  <option>Travel Insurance</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Policy Number</label>
+                <input name="policy_number" type="text" placeholder="POL-2024-001"/>
+              </div>
+              <div class="form-group">
+                <label>Insurance Company</label>
+                <input name="insurance_company" type="text" placeholder="LIC of India"/>
+              </div>
+              <div class="form-group">
+                <label>Premium Amount (₹)</label>
+                <input name="premium_amount" type="number" step="0.01" min="0" placeholder="12500"/>
+              </div>
+              <div class="form-group">
+                <label>Renewal Date</label>
+                <input name="renewal_date" type="date"/>
+              </div>
+              <div class="form-group">
+                <label>Status</label>
+                <select name="status">
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="expired">Expired</option>
+                </select>
+              </div>
+              <div class="form-group form-full">
+                <label>Notes</label>
+                <textarea name="notes" rows="2" placeholder="Any additional notes…"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vehicle -->
+          <div class="tab-content" id="tab-vehicle">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Vehicle Number</label>
+                <input name="vehicle_number" type="text" placeholder="KA01AB1234"/>
+              </div>
+              <div class="form-group">
+                <label>Vehicle Model</label>
+                <input name="vehicle_model" type="text" placeholder="Honda City"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nominee -->
+          <div class="tab-content" id="tab-nominee">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Nominee Name</label>
+                <input name="nominee_name" type="text" placeholder="Priya Kumar"/>
+              </div>
+              <div class="form-group">
+                <label>Relationship</label>
+                <select name="nominee_relation">
+                  <option value="">-- Select --</option>
+                  <option>Spouse</option><option>Father</option><option>Mother</option>
+                  <option>Son</option><option>Daughter</option><option>Brother</option>
+                  <option>Sister</option><option>Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Nominee Date of Birth</label>
+                <input name="nominee_dob" type="date"/>
+              </div>
+            </div>
+          </div>
+        </div><!-- /.tabs-container -->
+
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('clientModal')">Cancel</button>
+      <button class="btn btn-primary" type="submit" form="clientForm" id="saveClientBtn">💾 Save Client</button>
+    </div>
+  </div>
+</div>

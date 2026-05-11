@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% block title %}Search — InsuranceCMS{% endblock %}
+{% block page_title %}Universal Search{% endblock %}
+
+{% block content %}
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body">
+    <div class="search-wrap" style="width:100%;max-width:600px;margin:0 auto">
+      <span class="search-icon" style="font-size:1.2rem">🔍</span>
+      <input id="searchInput" type="text" autocomplete="off"
+             placeholder="Search by name, phone, email, vehicle number, policy number…"
+             style="font-size:1rem;padding:13px 16px 13px 46px;border-radius:12px"/>
+    </div>
+    <p class="text-muted text-center mt-1" style="font-size:.82rem">
+      Type at least 2 characters to search
+    </p>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span>Search Results</span>
+    <span id="searchCount" class="text-muted" style="font-size:.85rem"></span>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th><th>Phone</th><th>Email</th>
+          <th>Policy No.</th><th>Policy Type</th>
+          <th>Vehicle No.</th><th>Renewal</th><th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="searchResultsBody">
+        <tr>
+          <td colspan="8" class="table-empty">Enter a search term above to find clients.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% include "partials/client_modal.html" %}
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends "layout.html" %}
+{% block title %}{{ client.full_name }} — InsuranceCMS{% endblock %}
+{% block page_title %}Client Profile{% endblock %}
+
+{% block content %}
+<!-- Profile Header -->
+<div class="profile-header">
+  <div class="profile-avatar">{{ client.full_name[0]|upper }}</div>
+  <div style="flex:1">
+    <h2>{{ client.full_name }}</h2>
+    <p>{{ client.policy_type or 'No Policy' }} · {{ client.insurance_company or '' }}</p>
+    <p style="margin-top:6px">
+      {% set rs = renewal_status(client.renewal_date) %}
+      <span class="badge {{ rs.cls }}" style="font-size:.8rem">{{ rs.label }}</span>
+      {% if client.policy_number %}
+        <span style="margin-left:10px;opacity:.8">Policy: {{ client.policy_number }}</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="flex gap-2">
+    <button class="btn btn-primary"
+            data-id="{{ client.id }}"
+            onclick="openEditClient(this.dataset.id)">✏️ Edit</button>
+    <button class="btn btn-danger"
+            data-id="{{ client.id }}"
+            data-name="{{ client.full_name }}"
+            onclick="deleteClient(this.dataset.id, this.dataset.name)">🗑️ Delete</button>
+  </div>
+</div>
+
+<div class="profile-grid">
+  <!-- Left: Personal & Policy Info -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+
+    <!-- Personal -->
+    <div class="card">
+      <div class="card-header">👤 Personal Information</div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="info-item"><div class="lbl">Phone</div><div class="val">{{ client.phone or '–' }}</div></div>
+          <div class="info-item"><div class="lbl">Email</div><div class="val">{{ client.email or '–' }}</div></div>
+          <div class="info-item"><div class="lbl">Date of Birth</div><div class="val">{{ fmt_date(client.date_of_birth) }}</div></div>
+          <div class="info-item"><div class="lbl">Aadhaar Number</div><div class="val">{{ client.aadhaar_number or '–' }}</div></div>
+          <div class="info-item"><div class="lbl">PAN Number</div><div class="val">{{ client.pan_number or '–' }}</div></div>
+          <div class="info-item"><div class="lbl">Added On</div><div class="val">{{ fmt_date(client.created_at) }}</div></div>
+          <div class="info-item" style="grid-column:1/-1"><div class="lbl">Address</div><div class="val">{{ client.address or '–' }}</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vehicle -->
+    {% if client.vehicle_number or client.vehicle_model %}
+    <div class="card">
+      <div class="card-header">🚗 Vehicle Details</div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="info-item"><div class="lbl">Vehicle Number</div><div class="val">{{ client.vehicle_number or '–' }}</div></div>
+          <div class="info-item"><div class="lbl">Vehicle Model</div><div class="val">{{ client.vehicle_model or '–' }}</div></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Nominee -->
+    {% if client.nominee_name %}
+    <div class="card">
+      <div class="card-header">👨‍👩‍👧 Nominee Details</div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="info-item"><div class="lbl">Nominee Name</div><div class="val">{{ client.nominee_name or '–' }}</div></div>
+          <div class="info-item"><div class="lbl">Relationship</div><div class="val">{{ client.nominee_relation or '–' }}</div></div>
+          <div class="info-item"><div class="lbl">Date of Birth</div><div class="val">{{ fmt_date(client.nominee_dob) }}</div></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Right: Policy & Documents -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+
+    <!-- Policy -->
+    <div class="card">
+      <div class="card-header">📋 Policy Details</div>
+      <div class="card-body">
+        <div class="info-grid">
+          <div class="info-item"><div class="lbl">Policy Type</div><div class="val">{{ client.policy_type or '–' }}</div></div>
+          <div class="info-item"><div class="lbl">Policy Number</div><div class="val">{{ client.policy_number or '–' }}</div></div>
+          <div class="info-item"><div class="lbl">Insurance Company</div><div class="val">{{ client.insurance_company or '–' }}</div></div>
+          <div class="info-item"><div class="lbl">Premium Amount</div>
+            <div class="val" style="font-size:1.2rem;font-weight:700;color:var(--primary)">
+              {{ fmt_currency(client.premium_amount) if client.premium_amount else '–' }}
+            </div>
+          </div>
+          <div class="info-item"><div class="lbl">Renewal Date</div>
+            <div class="val">{{ fmt_date(client.renewal_date) }}
+              {% if client.renewal_date %}
+                {% set d = days_until(client.renewal_date) %}
+                {% if d != none %}
+                  <small class="text-muted">({{ d }} days)</small>
+                {% endif %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% if client.notes %}
+        <div style="margin-top:14px;padding:12px;background:var(--surface2);border-radius:8px;font-size:.875rem">
+          📝 {{ client.notes }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Documents -->
+    <div class="card">
+      <div class="card-header">
+        <span>📁 Documents ({{ docs|length }})</span>
+        <button class="btn btn-primary btn-sm" onclick="openModal('uploadModal')">➕ Upload</button>
+      </div>
+      <div class="card-body">
+        {% if docs %}
+        <div class="doc-grid">
+          {% for doc in docs %}
+          <div class="doc-tile" id="doc-{{ doc.id }}">
+            <div class="doc-icon">
+              {% if doc.mime_type == 'application/pdf' %}📄
+              {% elif 'image' in (doc.mime_type or '') %}🖼️
+              {% else %}📎{% endif %}
+            </div>
+            <div class="doc-name">{{ doc.original_name }}</div>
+            <div class="doc-type">{{ DOC_TYPE_LABELS.get(doc.doc_type, doc.doc_type) }}</div>
+            <div class="doc-actions">
+              <a href="/uploads/{{ doc.file_path }}" target="_blank" class="btn-icon" title="Preview">👁️</a>
+              <a href="/api/documents/{{ doc.id }}/download" class="btn-icon" title="Download">⬇️</a>
+              <button class="btn-icon danger"
+                      data-id="{{ doc.id }}"
+                      onclick="deleteDocument(this.dataset.id)" title="Delete">🗑️</button>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="table-empty" style="padding:32px">No documents uploaded yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Upload Modal ── -->
+<div class="modal-overlay" id="uploadModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <h3>Upload Document</h3>
+      <button class="modal-close" onclick="closeModal('uploadModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <form id="uploadForm">
+        <div class="form-group" style="margin-bottom:14px">
+          <label>Document Type</label>
+          <select name="doc_type">
+            <option value="aadhaar">Aadhaar Card</option>
+            <option value="pan">PAN Card</option>
+            <option value="rc_book">RC Book</option>
+            <option value="policy_pdf">Policy PDF</option>
+            <option value="passport_photo">Passport Photo</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="upload-zone" id="uploadZone">
+          <div class="upload-icon">☁️</div>
+          <p>Click or drag &amp; drop file here<br><small>PDF, JPG, PNG — max 10 MB</small></p>
+        </div>
+        <input type="file" id="docFile" name="file" accept=".jpg,.jpeg,.png,.pdf" style="display:none"/>
+      </form>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('uploadModal')">Cancel</button>
+      <button class="btn btn-primary" id="uploadBtn"
+              data-id="{{ client.id }}"
+              onclick="uploadDocument(this.dataset.id)">⬆️ Upload</button>
+    </div>
+  </div>
+</div>
+
+{% include "partials/client_modal.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Redirect to clients list after delete
+const _origDelete = window.deleteClient;
+window.deleteClient = async function(id, name) {
+  if (!confirm(`Delete client "${name}"? This cannot be undone.`)) return;
+  const r = await fetch(`/api/clients/${id}`, {method:'DELETE'});
+  const j = await r.json();
+  if (j.success) { showToast(j.message); setTimeout(()=>location.href='/clients',800); }
+  else showToast(j.error||'Failed','error');
+};
+</script>
+{% endblock %}
